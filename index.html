@@ -109,5 +109,121 @@
   <footer>
     <p>&copy; 2025 福田大介. All rights reserved.</p>
   </footer>
+
+<!-- 編集ボタン -->
+<button id="editModeBtn" style="position:fixed;top:20px;right:20px;z-index:1000;padding:10px 18px;font-size:1em;background:#b0413e;color:#fff;border:none;border-radius:6px;cursor:pointer;">編集</button>
+
+<!-- ログインモーダル -->
+<div id="loginModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.4);z-index:2000;align-items:center;justify-content:center;">
+  <div style="background:#fff;padding:2em 2.5em;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.12);text-align:center;min-width:260px;">
+    <h2>編集モードログイン</h2>
+    <input type="password" id="loginPassword" placeholder="パスワード" style="padding:0.5em;width:90%;margin-bottom:1em;" />
+    <br>
+    <button id="loginSubmitBtn" style="padding:0.5em 2em;background:#b0413e;color:#fff;border:none;border-radius:5px;">ログイン</button>
+    <div id="loginError" style="color:#b0413e;margin-top:0.7em;display:none;">パスワードが違います</div>
+  </div>
+</div>
+
+<!-- 編集モード用保存ボタン -->
+<button id="saveEditBtn" style="display:none;position:fixed;top:70px;right:20px;z-index:1000;padding:10px 18px;font-size:1em;background:#388e3c;color:#fff;border:none;border-radius:6px;cursor:pointer;">保存</button>
+
+<script>
+// ===== 編集モード管理 =====
+const EDIT_PASSWORD = "admin"; // 仮パスワード
+const editBtn = document.getElementById('editModeBtn');
+const loginModal = document.getElementById('loginModal');
+const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+const loginPassword = document.getElementById('loginPassword');
+const loginError = document.getElementById('loginError');
+const saveEditBtn = document.getElementById('saveEditBtn');
+
+// 編集対象セクション
+const editableSections = [
+  {selector: 'header', multiline: true},
+  {selector: 'section#about p', multiline: true},
+  {selector: 'section#projects', multiline: true},
+  {selector: 'section#events p', multiline: true},
+  {selector: 'section#contact', multiline: true},
+];
+
+function enableEditMode() {
+  editableSections.forEach(({selector, multiline}) => {
+    document.querySelectorAll(selector).forEach(el => {
+      el.contentEditable = "true";
+      el.style.outline = "2px dashed #b0413e";
+      el.style.background = "#fffbe9";
+      el.setAttribute('data-editable', 'true');
+    });
+  });
+  saveEditBtn.style.display = 'block';
+  editBtn.style.display = 'none';
+}
+
+function disableEditMode() {
+  editableSections.forEach(({selector}) => {
+    document.querySelectorAll(selector).forEach(el => {
+      el.contentEditable = "false";
+      el.style.outline = "";
+      el.style.background = "";
+      el.removeAttribute('data-editable');
+    });
+  });
+  saveEditBtn.style.display = 'none';
+  editBtn.style.display = 'block';
+}
+
+editBtn.onclick = () => {
+  loginModal.style.display = 'flex';
+  loginPassword.value = '';
+  loginError.style.display = 'none';
+  loginPassword.focus();
+};
+
+loginSubmitBtn.onclick = () => {
+  if (loginPassword.value === EDIT_PASSWORD) {
+    loginModal.style.display = 'none';
+    enableEditMode();
+  } else {
+    loginError.style.display = 'block';
+  }
+};
+
+loginPassword.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') loginSubmitBtn.click();
+});
+
+// 保存処理
+saveEditBtn.onclick = () => {
+  disableEditMode();
+  // 編集用UIを一時的に非表示にしてHTML取得
+  editBtn.style.display = 'none';
+  saveEditBtn.style.display = 'none';
+  loginModal.style.display = 'none';
+  // HTML取得
+  const html = document.documentElement.outerHTML;
+  // UIを戻す
+  editBtn.style.display = '';
+  saveEditBtn.style.display = '';
+
+  // ダウンロード処理
+  const blob = new Blob([html], {type: 'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'index.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+};
+
+// 編集モード中はページ遷移・リロード警告
+window.addEventListener('beforeunload', (e) => {
+  if (saveEditBtn.style.display === 'block') {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+</script>
+
 </body>
 </html>
